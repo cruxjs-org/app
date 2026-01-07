@@ -1,0 +1,23 @@
+{
+	"type"              : "lib",
+	"template"          : "clean",
+	"pm"                : "bun",
+	"repo"              : {
+		"org"           : "cruxjs",
+		"name"          : "app",
+		"version"       : "0.0.1",
+		"desc"          : "Full-stack framework orchestrator for building modern web applications. Zero configuration. Plugin-based architecture.",
+		"kw"            : ["cruxjs", "app"],
+		"license"       : "MIT",
+		"issues"        : "https://github.com/cruxjs-org/app/issues",
+		"homepage"      : "https://github.com/cruxjs-org/app#readme",
+		"git_url"       : "git+https://github.com/cruxjs-org/app.git"
+	},
+	"author"            : {
+		"id"            : "maysara-elshewehy",
+		"name"          : "Maysara",
+		"email"         : "maysara.elshewehy@gmail.com",
+		"url"           : "https://github.com/maysara-elshewehy"
+	},
+	"createdAt"         : "2026-01-05T05:10:35.556Z"
+}
