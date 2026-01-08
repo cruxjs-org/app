@@ -1,6 +1,6 @@
 {
 	"name"                             : "@cruxjs/app",
-	"version"                          : "0.0.3",
+	"version"                          : "0.0.4",
 	"description"                      : "Full-stack framework orchestrator for building modern web applications. Zero configuration. Plugin-based architecture.",
 	"keywords"                         : ["cruxjs", "app"],
 	"license"                          : "MIT",
@@ -41,8 +41,8 @@
 	},
 	"dependencies": {
 		"@cruxjs/base"                 : "^0.0.5",
-		"@minejs/db"                   : "^0.0.3",
-		"@minejs/i18n"                 : "^0.0.3",
+		"@minejs/db"                   : "^0.0.4",
+		"@minejs/i18n"                 : "^0.0.4",
 		"@minejs/server"               : "^0.0.5"
 	},
 	"devDependencies": {
