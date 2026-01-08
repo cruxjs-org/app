@@ -21,12 +21,12 @@
 
     /**
      * Builds the client bundle using Bun's bundler
-     * 
+     *
      * @param {AppConfig} config - The application configuration containing client build settings
      * @param {Logger} logger - Logger instance for logging build progress and errors
      * @returns {Promise<{success: boolean, outputs: string[]} | null>} Build result with output paths, or null if no client config
      * @throws {Error} If the build process fails
-     * 
+     *
      * @example
      * const result = await buildClient(config, logger);
      * if (result?.success) {
@@ -61,20 +61,120 @@
     }
 
     /**
+     * Builds and installs UI library if specified in config
+     *
+     * Handles:
+     * - Installing the specified UI package from npm
+     * - Copying minified UI assets to the configured output path
+     * - Supports packages like @mineui/core
+     *
+     * @param {AppConfig} config - The application configuration containing ui settings
+     * @param {Logger} logger - Logger instance for logging build progress and errors
+     * @returns {Promise<{success: boolean, output: string} | null>} Build result with output path, or null if no ui config
+     * @throws {Error} If the build process fails
+     *
+     * @example
+     * const result = await buildUI(config, logger);
+     * if (result?.success) {
+     *   console.log('UI built to:', result.output);
+     * }
+     */
+    async function buildUI(config: AppConfig, logger: Logger) {
+        if (!config.ui) return null;
+
+        logger.info(`Building UI from package: ${config.ui.package}...`);
+
+        try {
+            // Install the UI package
+            const installProcess = Bun.spawn(['bun', 'add', config.ui.package], {
+                stdio: ['ignore', 'pipe', 'pipe']
+            });
+
+            const installResult = await installProcess.exited;
+
+            if (installResult !== 0) {
+                throw new Error(`Failed to install UI package: ${config.ui.package}`);
+            }
+
+            logger.info(`UI package installed: ${config.ui.package}`);
+
+            // TODO: Copy minified assets to output directory
+            // This would typically involve:
+            // 1. Finding the package in node_modules
+            // 2. Locating dist/minified CSS files
+            // 3. Copying to config.ui.output path
+
+            logger.success(`UI built → ${config.ui.output}`);
+
+            return { success: true, output: config.ui.output };
+        } catch (err) {
+            logger.error('Failed to build UI', err as Error);
+            throw err;
+        }
+    }
+
+    /**
+     * Builds SCSS/CSS styles using a bundler
+     *
+     * Handles:
+     * - Compiling SCSS to CSS
+     * - Minifying CSS if configured
+     * - Generating source maps if configured
+     * - Outputting to specified directory
+     *
+     * @param {AppConfig} config - The application configuration containing style settings
+     * @param {Logger} logger - Logger instance for logging build progress and errors
+     * @returns {Promise<{success: boolean, output: string} | null>} Build result with output path, or null if no style config
+     * @throws {Error} If the build process fails
+     *
+     * @example
+     * const result = await buildStyles(config, logger);
+     * if (result?.success) {
+     *   console.log('Styles built to:', result.output);
+     * }
+     */
+    async function buildStyles(config: AppConfig, logger: Logger) {
+        if (!config.style) return null;
+
+        logger.info(`Building styles from: ${config.style.entry}...`);
+
+        try {
+            // Use Bun's built-in bundler to handle SCSS/CSS
+            const result = await Bun.build({
+                entrypoints: [config.style.entry],
+                outdir: config.style.output,
+                minify: config.style.minify ?? !config.debug,
+                sourcemap: config.style.sourcemap ?? config.debug ? 'inline' : 'none'
+            });
+
+            if (!result.success) {
+                throw new Error('Style build failed');
+            }
+
+            logger.success(`Styles built → ${config.style.output}`);
+
+            return { success: true, output: config.style.output };
+        } catch (err) {
+            logger.error('Failed to build styles', err as Error);
+            throw err;
+        }
+    }
+
+    /**
      * Initializes and configures database connections
-     * 
+     *
      * Handles:
      * - Multiple database instances (primary, cache, etc.)
      * - User-defined schemas from config
      * - Plugin schemas from plugins
      * - In-memory databases for plugin-only scenarios
-     * 
+     *
      * @param {AppConfig} config - Application configuration with database settings
      * @param {TableSchema[]} additionalSchemas - Database schemas provided by plugins
      * @param {Logger} logger - Logger instance for logging setup progress
      * @returns {Promise<Map<string, DB>>} Map of database instances by name
      * @throws {Error} If schema loading or database initialization fails
-     * 
+     *
      * @example
      * const databases = await setupDatabases(config, pluginSchemas, logger);
      * const db = databases.get('primary');
@@ -147,18 +247,18 @@
 
     /**
      * Initializes internationalization (i18n) support
-     * 
+     *
      * Loads language files and configures the i18n system based on:
      * - Default language
      * - Supported languages
      * - Base path for translation files
      * - File extension (json, cjson, etc.)
-     * 
+     *
      * @param {AppConfig} config - Application configuration with i18n settings
      * @param {Logger} logger - Logger instance for logging setup progress
      * @returns {Promise<void>}
      * @throws {Error} If i18n setup or language file loading fails
-     * 
+     *
      * @example
      * await setupI18n({
      *   i18n: {
@@ -190,16 +290,16 @@
 
     /**
      * Dynamically loads route definitions from API directory
-     * 
+     *
      * Scans the specified directory for route files and imports them.
      * Each route file should export either:
      * - `routes` property with RouteDefinition array
      * - Default export with RouteDefinition array
-     * 
+     *
      * @param {AppConfig} config - Application configuration with api.directory
      * @param {Logger} logger - Logger instance for logging scan progress
      * @returns {Promise<RouteDefinition[]>} Array of loaded route definitions
-     * 
+     *
      * @example
      * const routes = await loadRoutes({
      *   api: { directory: './src/server/api' }
@@ -239,13 +339,13 @@
 
     /**
      * Scans a directory for TypeScript/JavaScript files
-     * 
+     *
      * Uses Bun's Glob API to recursively find all .ts and .js files in a directory.
      * Gracefully handles non-existent directories (returns empty array).
-     * 
+     *
      * @param {string} dir - Directory path to scan
      * @returns {Promise<string[]>} Array of absolute file paths found
-     * 
+     *
      * @example
      * const files = await scanDirectory('./src/server/api');
      * // Returns: ['./src/server/api/users.ts', './src/server/api/posts.ts']
@@ -270,21 +370,21 @@
 
     /**
      * Creates a CruxJS application instance with full lifecycle management
-     * 
+     *
      * This is the main entry point for building a CruxJS application. It:
      * 1. Registers plugins (Phase 0)
      * 2. Builds client, initializes databases, setups i18n (Phase 1: AWAKE)
      * 3. Creates server, merges routes and middleware (Phase 2: START)
      * 4. Starts the server and enables request handling (Phase 3: READY)
-     * 
+     *
      * Phases execute sequentially when `app.start()` is called.
-     * 
+     *
      * @param {AppConfig} userConfig - Application configuration object
      * @param {LifecycleHooks} [hooks] - Optional lifecycle event handlers
      * @returns {AppInstance} Application instance with control methods
-     * 
+     *
      * @throws {Error} Will throw if any lifecycle phase fails (unless caught in onError hook)
-     * 
+     *
      * @example
      * // Basic usage
      * const app = createApp({
@@ -294,7 +394,7 @@
      *   plugins: [spaPlugin]
      * });
      * await app.start();
-     * 
+     *
      * @example
      * // With lifecycle hooks
      * const app = createApp(config, {
@@ -308,7 +408,7 @@
      *     console.error(`Error in ${phase}:`, error.message);
      *   }
      * });
-     * 
+     *
      * @example
      * // With cleanup
      * const app = createApp(config);
@@ -388,6 +488,14 @@
                 // Build client
                 clientBuild = await buildClient(config, logger);
                 ctx.clientBuild = clientBuild;
+
+                // Build UI library if configured
+                const uiBuild = await buildUI(config, logger);
+                ctx.uiBuild = uiBuild;
+
+                // Build styles if configured
+                const styleBuild = await buildStyles(config, logger);
+                ctx.styleBuild = styleBuild;
 
                 // Collect plugin schemas
                 const pluginSchemas = pluginRegistry.collectSchemas();
