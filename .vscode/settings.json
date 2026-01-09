@@ -29,7 +29,8 @@
         "DummyProject_Nezem/.hmm": true,
         "DummyProject_Nezem/README.md": true,
         "DummyProject_Nezem/package.json": true,
-        "DummyProject_Nezem/assets": true
+        "DummyProject_Nezem/assets": true,
+        "node_modules": true
     },
     "hide-files.files": [
         "eslint.config.mjs",
@@ -56,6 +57,7 @@
         "DummyProject_Nezem/.hmm",
         "DummyProject_Nezem/README.md",
         "DummyProject_Nezem/package.json",
-        "DummyProject_Nezem/assets"
+        "DummyProject_Nezem/assets",
+        "node_modules"
     ]
 }

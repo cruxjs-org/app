@@ -12,6 +12,7 @@
     import { DB } from '@minejs/db';
     import { setupAuto } from '@minejs/i18n';
     import type { TableSchema } from '@minejs/db';
+    import * as sass from 'sass';
 
 // ╚══════════════════════════════════════════════════════════════════════════════════════╝
 
@@ -80,29 +81,47 @@
      * }
      */
     async function buildUI(config: AppConfig, logger: Logger) {
-        if (!config.ui) return null;
+        if (!config.ui) {
+            logger.info('No UI config provided, skipping UI build');
+            return null;
+        }
 
         logger.info(`Building UI from package: ${config.ui.package}...`);
 
         try {
-            // Install the UI package
-            const installProcess = Bun.spawn(['bun', 'add', config.ui.package], {
-                stdio: ['ignore', 'pipe', 'pipe']
-            });
+            // // Install the UI package
+            // const installProcess = Bun.spawn(['hmm', 'i', config.ui.package], {
+            //     stdio: ['ignore', 'pipe', 'pipe']
+            // });
 
-            const installResult = await installProcess.exited;
+            // const installResult = await installProcess.exited;
 
-            if (installResult !== 0) {
-                throw new Error(`Failed to install UI package: ${config.ui.package}`);
+            // if (installResult !== 0) {
+            //     throw new Error(`Failed to install UI package: ${config.ui.package}`);
+            // }
+
+            // logger.info(`UI package installed: ${config.ui.package}`);
+
+            // Copy minified CSS from node_modules to output directory as min.css
+            // @mineui/core exports mineui.css, we copy it as min.css
+            const uiSourcePath = `./node_modules/${config.ui.package}/dist/mineui.css`;
+            const uiOutputPath = `${config.ui.output}/min.css`;
+
+            // Ensure output directory exists and copy file
+            try {
+                const { mkdir } = await import('fs/promises');
+                await mkdir(config.ui.output, { recursive: true });
+                const sourceFile = Bun.file(uiSourcePath);
+                const exists = await sourceFile.exists();
+                if (!exists) {
+                    logger.info(`UI source file not found: ${uiSourcePath}`);
+                } else {
+                    await Bun.write(uiOutputPath, sourceFile);
+                    logger.info(`Copied UI CSS → ${uiOutputPath}`);
+                }
+            } catch (copyErr) {
+                logger.error(`Failed to copy UI CSS: ${copyErr}`);
             }
-
-            logger.info(`UI package installed: ${config.ui.package}`);
-
-            // TODO: Copy minified assets to output directory
-            // This would typically involve:
-            // 1. Finding the package in node_modules
-            // 2. Locating dist/minified CSS files
-            // 3. Copying to config.ui.output path
 
             logger.success(`UI built → ${config.ui.output}`);
 
@@ -134,29 +153,40 @@
      * }
      */
     async function buildStyles(config: AppConfig, logger: Logger) {
-        if (!config.style) return null;
+        if (!config.style) {
+            logger.info('No style config provided, skipping style build');
+            return null;
+        }
 
         logger.info(`Building styles from: ${config.style.entry}...`);
 
         try {
-            // Use Bun's built-in bundler to handle SCSS/CSS
-            const result = await Bun.build({
-                entrypoints: [config.style.entry],
-                outdir: config.style.output,
-                minify: config.style.minify ?? !config.debug,
-                sourcemap: config.style.sourcemap ?? config.debug ? 'inline' : 'none'
+            // Parse output path to get directory and filename
+            const outputPath = config.style.output;
+            const lastSlashIndex = outputPath.lastIndexOf('/');
+            const outputDir = outputPath.substring(0, lastSlashIndex);
+            const outputFilename = outputPath.substring(lastSlashIndex + 1);
+
+            // Ensure output directory exists
+            const { mkdir } = await import('fs/promises');
+            await mkdir(outputDir, { recursive: true });
+
+            // Use sass to compile SCSS to CSS
+            const compileResult = sass.compile(config.style.entry, {
+                style: config.style.minify ? 'compressed' : 'expanded',
+                sourceMap: config.style.sourcemap ? true : false
             });
 
-            if (!result.success) {
-                throw new Error('Style build failed');
-            }
+            // Write CSS file directly without JS wrapper
+            await Bun.write(outputPath, compileResult.css);
 
-            logger.success(`Styles built → ${config.style.output}`);
+            logger.info(`Compiled SCSS to CSS → ${outputFilename}`);
+            logger.success(`Styles built → ${outputPath}`);
 
-            return { success: true, output: config.style.output };
+            return { success: true, output: outputPath };
         } catch (err) {
             logger.error('Failed to build styles', err as Error);
-            throw err;
+            return { success: false, output: config.style?.output || 'unknown' };
         }
     }
 
