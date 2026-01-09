@@ -8,7 +8,7 @@
 </div>
 
 <div align="center">
-    <img src="https://img.shields.io/badge/v-0.0.5-black"/>
+    <img src="https://img.shields.io/badge/v-0.0.6-black"/>
     <img src="https://img.shields.io/badge/🔥-@cruxjs-black"/>
     <br>
     <img src="https://img.shields.io/github/issues/cruxjs-org/app?style=flat" alt="Github Repo Issues" />
