@@ -10,7 +10,7 @@
     import { AppConfig, LifecycleContext, LifecycleHooks, AppInstance, RouteDefinition, AppMiddleware, Logger, PluginRegistry, ResourceMerger } from '@cruxjs/base';
     import { server as createServer } from '@minejs/server';
     import { DB } from '@minejs/db';
-    import { setupAuto } from '@minejs/i18n';
+    import { setupI18n as _setupI18n } from '@minejs/i18n';
     import type { TableSchema } from '@minejs/db';
     import * as sass from 'sass';
 
@@ -22,6 +22,11 @@
 
     /**
      * Builds the client bundle using Bun's bundler
+     *
+     * Browser.tsx is a template file that:
+     * - Imports user's client config from ./config.ts
+     * - Reads i18n config from HTML meta tag (injected by server)
+     * - Bootstraps ClientManager automatically via signal
      *
      * @param {AppConfig} config - The application configuration containing client build settings
      * @param {Logger} logger - Logger instance for logging build progress and errors
@@ -89,19 +94,6 @@
         logger.info(`Building UI from package: ${config.ui.package}...`);
 
         try {
-            // // Install the UI package
-            // const installProcess = Bun.spawn(['hmm', 'i', config.ui.package], {
-            //     stdio: ['ignore', 'pipe', 'pipe']
-            // });
-
-            // const installResult = await installProcess.exited;
-
-            // if (installResult !== 0) {
-            //     throw new Error(`Failed to install UI package: ${config.ui.package}`);
-            // }
-
-            // logger.info(`UI package installed: ${config.ui.package}`);
-
             // Copy minified CSS from node_modules to output directory as min.css
             // @mineui/core exports mineui.css, we copy it as min.css
             const uiSourcePath = `./node_modules/${config.ui.package}/dist/mineui.css`;
@@ -304,7 +296,7 @@
         logger.info('Setting up i18n...');
 
         try {
-            await setupAuto({
+            await _setupI18n({
                 defaultLanguage: config.i18n.defaultLanguage,
                 supportedLanguages: config.i18n.supportedLanguages,
                 basePath: config.i18n.basePath,

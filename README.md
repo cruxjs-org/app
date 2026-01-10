@@ -8,9 +8,10 @@
 </div>
 
 <div align="center">
-    <img src="https://img.shields.io/badge/v-0.0.6-black"/>
-    <img src="https://img.shields.io/badge/🔥-@cruxjs-black"/>
+    <img src="https://img.shields.io/badge/v-0.0.7-black"/>
+    <a href="https://github.com/cruxjs-org"><img src="https://img.shields.io/badge/🔥-@cruxjs-black"/></a>
     <br>
+    <img src="https://img.shields.io/badge/coverage-~%25-brightgreen" alt="Test Coverage" />
     <img src="https://img.shields.io/github/issues/cruxjs-org/app?style=flat" alt="Github Repo Issues" />
     <img src="https://img.shields.io/github/stars/cruxjs-org/app?style=social" alt="GitHub Repo stars" />
 </div>
@@ -22,602 +23,636 @@
 
 <!-- ╔══════════════════════════════ DOC ══════════════════════════════╗ -->
 
+- ## Overview 👀
+
+    - #### Why ?
+        > To provide a unified full-stack framework that orchestrates server configuration, client builds, i18n, styling, SPA integration, and plugins in a single declarative configuration with zero boilerplate.
+
+    - #### When ?
+        > When you need a production-ready full-stack application with:
+        > - Server configuration (port, logging, middleware)
+        > - Automatic client bundling with Bun
+        > - Style preprocessing (SCSS/Sass)
+        > - i18n setup and configuration
+        > - SPA plugin integration
+        > - Plugin system for extensibility
+        > - Unified lifecycle management
+
+        > When you want to build modern full-stack SPAs without framework complexity.
+
+    <br>
+    <br>
+
 - ## Quick Start 🔥
 
-    > **_CruxJS is a full-stack framework orchestrator built on [@minejs](https://github.com/minejs-org) that empowers developers to build modern web applications with **zero configuration**. It orchestrates without dictating—providing a plugin-based architecture where you control the flow._**
+    > install [`hmm`](https://github.com/minejs-org/hmm) first.
 
-    - ### Setup
+    ```bash
+    # in your terminal
+    hmm i @cruxjs/app
+    ```
 
-        > First, install [`hmm`](https://github.com/minejs-org/hmm) — the package manager for the CruxJS ecosystem.
+    <div align="center"> <img src="./assets/img/line.png" alt="line" style="display: block; margin-top:20px;margin-bottom:20px;width:500px;"/> </div>
 
-        ```bash
-        # Install CruxJS App
-        hmm i @cruxjs/app
+    - #### Setup
 
-        # Or install with plugins
-        hmm i @cruxjs/app @cruxplug/spa
-        ```
-
-    - ### Basic Usage
+        > Create your application configuration in a single file:
 
         ```typescript
-        import { createApp, type AppConfig } from '@cruxjs/app';
+        import { createApp, AppConfig } from '@cruxjs/app';
+        import { serverSPA }            from '@cruxjs/spa';
 
-        const config: AppConfig = {
-          debug: true,
+        const appConfig: AppConfig = {
+            debug           : true,
 
-          // Server configuration
-          server: {
-            port: 3000,
-            host: 'localhost'
-          },
+            // Server configuration
+            server: {
+                port        : 3000,
+                host        : 'localhost',
+                logging: {
+                    level   : 'info',
+                    pretty  : true
+                }
+            },
 
-          // Client build configuration (bundles with Bun)
-          client: {
-            entry: './src/client/browser.tsx',
-            output: './src/shared/static/dist/js',
-            minify: true,
-            sourcemap: false
-          },
+            // Static files
+            static: {
+                path        : '/static',
+                directory   : './src/shared/static',
+                maxAge      : 3600
+            },
 
-          // UI library (installs from npm and exports min.css)
-          ui: {
-            package: '@mineui/core',
-            output: './src/shared/static/dist/css'
-          },
+            // Client build configuration
+            client: {
+                entry       : './src/app/client.ts',
+                output      : './src/shared/static/dist/js',
+                minify      : true,
+                sourcemap   : false
+            },
 
-          // Custom styles (compiles SCSS/CSS)
-          style: {
-            entry: './src/client/ui/style/index.scss',
-            output: './src/shared/static/dist/css/extra.css',
-            minify: true,
-            sourcemap: false
-          },
+            // i18n configuration
+            i18n: {
+                defaultLanguage     : 'en',
+                supportedLanguages  : ['en', 'ar'],
+                basePath            : './src/shared/static/dist/i18n'
+            },
 
-          // Static files serving
-          static: {
-            path: '/static',
-            directory: './src/shared/static',
-            maxAge: 3600
-          },
+            // Style build configuration
+            style: {
+                entry       : './src/app/ui/style/index.scss',
+                output      : './src/shared/static/dist/css/min.css',
+                minify      : true
+            },
 
-          // Plugins (SPA, API routes, databases, etc.)
-          plugins: [/* your plugins */]
+            plugins         : []
         };
 
-        // Create and run the app
-        const app = createApp(config);
-        await app.start();
+        // Create and start app
+        const app           = createApp(appConfig);
+        app.start();
+        ```
+
+        <div align="center"> <img src="./assets/img/line.png" alt="line" style="display: block; margin-top:20px;margin-bottom:20px;width:500px;"/> </div>
+        <br>
+
+    - #### Usage
+
+        > Add plugins and configure SPA:
+
+        ```typescript
+        // Create SPA plugin
+        const spaPlugin = serverSPA({
+            baseUrl             : 'http://localhost:3000',
+            clientEntry         : './src/app/client.ts',
+            clientScriptPath    : ['/static/dist/js/client.js'],
+            clientStylePath     : ['/static/dist/css/min.css'],
+
+            pages: [
+                {
+                    title       : 'Home',
+                    path        : '/',
+                    description : 'Welcome to our app'
+                }
+            ],
+
+            autoBootstrapClient : true
+        }, appConfig);
+
+        // Add plugin to app
+        appConfig.plugins.push(spaPlugin);
+
+        // Start app
+        const app = createApp(appConfig);
+        app.start();
+        ```
+
+        <div align="center"> <img src="./assets/img/line.png" alt="line" style="display: block; margin-top:20px;margin-bottom:20px;width:500px;"/> </div>
+
+        - #### Server Configuration
+
+            ```typescript
+            server: {
+                // Port and host
+                port            : 3000,
+                host            : 'localhost',
+
+                // Logging configuration
+                logging: {
+                    level       : 'info',      // 'debug' | 'info' | 'warn' | 'error'
+                    pretty      : true        // Pretty-print logs
+                },
+
+                // CORS configuration (optional)
+                cors: {
+                    origin      : 'http://localhost:3000',
+                    credentials : true
+                },
+
+                // Middleware (optional)
+                middleware: [
+                    // Add custom middleware here
+                ]
+            }
+            ```
+
+        - #### Client Build Configuration
+
+            ```typescript
+            client: {
+                // Entry file for client bundle
+                entry           : './src/app/client.ts',
+
+                // Output directory
+                output          : './src/shared/static/dist/js',
+
+                // Build options
+                minify          : true,         // Minify bundle
+                sourcemap       : false,        // Generate source maps
+                target          : 'browser',    // Build target (browser, node, etc.)
+                external        : [],           // External dependencies
+
+                // Custom build configuration
+                define: {
+                    'process.env.VERSION': '"1.0.0"'
+                }
+            }
+            ```
+
+        - #### i18n Configuration
+
+            ```typescript
+            i18n: {
+                // Default language
+                defaultLanguage     : 'en',
+
+                // Supported languages
+                supportedLanguages  : ['en', 'ar', 'fr', 'de'],
+
+                // Base path for translation files
+                basePath            : './src/shared/static/dist/i18n',
+
+                // Custom storage (optional)
+                storage             : 'localStorage'
+            }
+            ```
+
+        - #### Style Build Configuration
+
+            ```typescript
+            style: {
+                // Entry SCSS/Sass file
+                entry               : './src/app/ui/style/index.scss',
+
+                // Output CSS file
+                output              : './src/shared/static/dist/css/min.css',
+
+                // Build options
+                minify              : true,     // Minify CSS
+                sourcemap           : false,    // Generate source maps
+
+                // Include paths
+                includePaths: [
+                    './src/app/ui/components'
+                ]
+            }
+            ```
+
+        - #### Middleware
+
+            ```typescript
+            // Add custom middleware for request/response handling
+            server: {
+                middleware: [
+                    {
+                        path    : '/api/*',
+                        handler : async (req, res) => {
+                            // Custom API handling
+                        }
+                    }
+                ]
+            }
+            ```
+
+        - #### Plugins
+
+            ```typescript
+            // Create custom plugins
+            const myPlugin = {
+                name            : 'my-plugin',
+                version         : '1.0.0',
+
+                onRegister      : async (app) => {
+                    console.log('Plugin registered');
+                },
+
+                onAwake         : async (ctx) => {
+                    console.log('Plugin awake');
+                },
+
+                onStart         : async (ctx) => {
+                    console.log('Plugin starting');
+                },
+
+                onReady         : async (ctx) => {
+                    console.log('Plugin ready');
+                }
+            };
+
+            appConfig.plugins.push(myPlugin);
+            ```
+
+    <br>
+    <br>
+
+- ## Complete Example 📑
+
+    - ### src/index.ts
+
+        ```typescript
+        import { createApp, AppConfig } from '@cruxjs/app';
+        import { serverSPA }            from '@cruxjs/spa';
+
+        import * as HomePage            from './app/ui/pages/home';
+        import * as ErrorPage           from './app/ui/pages/error';
+
+        const appConfig: AppConfig = {
+            debug: true,
+
+            server: {
+                port            : 3000,
+                host            : 'localhost',
+                logging: {
+                    level       : 'info',
+                    pretty      : true
+                }
+            },
+
+            static: {
+                path            : '/static',
+                directory       : './src/shared/static',
+                maxAge          : 3600,
+                index           : ['index.html']
+            },
+
+            client: {
+                entry           : './src/app/client.ts',
+                output          : './src/shared/static/dist/js',
+                minify          : true,
+                sourcemap       : false,
+            },
+
+            i18n: {
+                defaultLanguage     : 'en',
+                supportedLanguages  : ['en', 'ar'],
+                basePath            : './src/shared/static/dist/i18n'
+            },
+
+            style: {
+                entry           : './src/app/ui/style/index.scss',
+                output          : './src/shared/static/dist/css/min.css',
+                minify          : true,
+                sourcemap       : false,
+            },
+
+            plugins             : []
+        };
+
+        const spaPlugin = serverSPA({
+            baseUrl             : 'http://localhost:3000',
+            clientEntry         : './src/app/client.ts',
+            clientScriptPath    : ['/static/dist/js/client.js'],
+            clientStylePath     : ['/static/dist/css/min.css'],
+
+            author              : 'Your Name',
+            authorUrl           : 'https://github.com/yourname',
+            defaultDescription  : 'My CruxJS Application',
+            defaultKeywords     : ['cruxjs', 'framework', 'spa'],
+
+            pages               : [HomePage.meta],
+            errorPages          : [ErrorPage.meta],
+            enableAutoNotFound  : true,
+            autoBootstrapClient : true
+        }, appConfig);
+
+        appConfig.plugins.push(spaPlugin);
+
+        const app = createApp(appConfig);
+        app.start();
+        ```
+
+    - ### Directory Structure
+
+        ```
+        src/
+        ├── index.ts                    # Main app config & entry
+        ├── app/
+        │   ├── client.ts               # Client config
+        │   └── ui/
+        │       ├── pages/
+        │       │   ├── home.tsx        # Home page component
+        │       │   └── error.tsx       # Error page component
+        │       └── style/
+        │           └── index.scss      # Global styles
+        └── shared/
+            └── static/
+                ├── img/
+                │   └── logo.png
+                └── dist/
+                    ├── js/             # Client bundle output
+                    ├── css/            # Style output
+                    └── i18n/           # Translations
         ```
 
     <br>
-
-- ## Complete Example 📖
-
-    ### Directory Structure
-
-    ```
-    src/
-    ├── index.ts                 # Entry point (app config + setup)
-    ├── client/
-    │   ├── browser.tsx          # Client entry
-    │   └── ui/
-    │       ├── App.tsx
-    │       ├── pages/           # Page components
-    │       └── style/
-    │           └── index.scss   # Custom styles
-    ├── server/
-    │   ├── api/
-    │   │   └── index.ts         # API routes
-    │   └── schema.ts            # Database schemas
-    └── shared/
-        └── static/              # Static assets (generated files here)
-    ```
-
-    ### 1. Server Entry Point
-
-    **src/index.ts**
-    ```typescript
-    import { createApp, type AppConfig } from '@cruxjs/app';
-    import { serverSPA } from '@cruxplug/spa';
-
-    const spaPlugin = serverSPA({
-      baseUrl: 'http://localhost:3000',
-      clientEntry: './src/client/browser.tsx',
-      clientScriptPath: ['/static/dist/js/browser.js'],
-      clientStylePath: ['/static/dist/css/min.css', '/static/dist/css/extra.css'],
-
-      // SEO & E-E-A-T configuration
-      author: 'Your Team',
-      authorUrl: 'https://example.com/about',
-      defaultDescription: 'Your app description',
-      defaultKeywords: ['key', 'words'],
-
-      enableAutoNotFound: true,
-      pages: [
-        {
-          title: 'Home',
-          path: '/',
-          description: 'Welcome',
-          keywords: ['home']
-        }
-      ],
-      errorPages: [
-        {
-          statusCode: 404,
-          title: '404 - Not Found',
-          path: '/404'
-        }
-      ]
-    });
-
-    const config: AppConfig = {
-      debug: true,
-
-      server: {
-        port: 3000,
-        host: 'localhost',
-        logging: { level: 'info', pretty: true }
-      },
-
-      // Build configuration
-      client: {
-        entry: './src/client/browser.tsx',
-        output: './src/shared/static/dist/js',
-        minify: true
-      },
-
-      ui: {
-        package: '@mineui/core',
-        output: './src/shared/static/dist/css'
-      },
-
-      style: {
-        entry: './src/client/ui/style/index.scss',
-        output: './src/shared/static/dist/css/extra.css',
-        minify: true
-      },
-
-      static: {
-        path: '/static',
-        directory: './src/shared/static',
-        maxAge: 3600
-      },
-
-      plugins: [spaPlugin]
-    };
-
-    const app = createApp(config);
-    await app.start();
-    ```
-
-    ### 2. Client Entry Point
-
-    **src/client/browser.tsx**
-    ```typescript
-    import { mount } from '@minejs/jsx';
-    import { App } from './ui/App';
-    import { ClientManager } from '@cruxjs/client';
-    import { HomePage } from './ui/pages/HomePage';
-    import { NotFoundPage } from './ui/pages/NotFoundPage';
-
-    const clientManager = new ClientManager({
-      debug: true,
-      routes: {
-        '/': HomePage,
-        '/about': AboutPage,
-        // ...more routes
-      },
-      notFoundComponent: NotFoundPage,
-      errorComponent: ErrorPage
-    });
-
-    (async () => {
-      await clientManager.boot();
-      mount(<App />, '#app');
-      await clientManager.ready('#app-main');
-    })();
-    ```
-
-    ### 3. Define API Routes
-
-    **src/server/api/index.ts**
-    ```typescript
-    import type { RouteDefinition } from '@cruxjs/app';
-
-    export const routes: RouteDefinition[] = [
-      {
-        method: 'GET',
-        path: '/api/users',
-        handler: async (ctx) => {
-          return ctx.json({ users: [] });
-        }
-      },
-      {
-        method: 'POST',
-        path: '/api/users',
-        handler: async (ctx) => {
-          const data = await ctx.request.json();
-          return ctx.json({ created: true }, { status: 201 });
-        }
-      }
-    ];
-    ```
-
-    ### 4. Add Custom Styles
-
-    **src/client/ui/style/index.scss**
-    ```scss
-    // Import UI library variables (if available)
-    @import '@mineui/core/scss/variables';
-
-    // Custom styles
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      margin: 0;
-      padding: 0;
-    }
-
-    .app {
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
-    }
-
-    // More custom styles...
-    ```
-
-- ## How It Works 🏗️
-
-    CruxJS orchestrates your full-stack application through **4 lifecycle phases**:
-
-    - #### **Phase 0: REGISTER**
-        Plugins register and declare their capabilities (routes, schemas, middleware).
-
-    - #### **Phase 1: AWAKE**
-        - Client is built using Bun's bundler
-        - UI library (e.g., @mineui/core) is installed and CSS is extracted
-        - Custom SCSS/CSS is compiled using Dart Sass
-        - Databases are initialized with plugin schemas
-        - i18n is set up
-
-        **Output structure:**
-        ```
-        src/shared/static/dist/
-        ├── js/
-        │   └── browser.js          (bundled client)
-        └── css/
-            ├── min.css             (UI library CSS)
-            └── extra.css           (compiled custom styles)
-        ```
-
-    - #### **Phase 2: START**
-        - Server is created with @minejs/server
-        - Routes are merged (user routes + plugin routes)
-        - Middleware stack is built
-        - Static files handler is configured
-
-    - #### **Phase 3: READY**
-        - Server is listening and ready to handle requests
-        - Plugins are fully operational
-
-    <br>
-
-- ## Building Your App 🛠️
-
-    ### Client Build (JavaScript)
-    ```typescript
-    client: {
-      entry: './src/client/browser.tsx',
-      output: './src/shared/static/dist/js',
-      target: 'browser',  // or 'bun'
-      minify: true,       // Minify in production
-      sourcemap: false,   // Source maps in development
-      external: []        // Dependencies to exclude
-    }
-    ```
-    Uses Bun's bundler to create optimized JavaScript bundles.
-
-    ### UI Library Build (CSS from npm)
-    ```typescript
-    ui: {
-      package: '@mineui/core',  // Any npm package
-      output: './src/shared/static/dist/css'
-    }
-    ```
-    - Installs the UI package from npm
-    - Extracts `dist/mineui.css` and copies it as `min.css`
-    - Perfect for pre-built component libraries
-
-    ### Styles Build (SCSS to CSS)
-    ```typescript
-    style: {
-      entry: './src/client/ui/style/index.scss',
-      output: './src/shared/static/dist/css/extra.css',
-      minify: true,
-      sourcemap: false
-    }
-    ```
-    - Compiles SCSS/CSS using Dart Sass (pure CSS output)
-    - Minifies output in production
-    - No JavaScript wrappers—just clean CSS files
-
-    ### All Together
-    The SPA plugin links everything:
-    ```typescript
-    import { serverSPA } from '@cruxplug/spa';
-
-    const spaPlugin = serverSPA({
-      baseUrl: 'http://localhost:3000',
-      clientEntry: './src/client/browser.tsx',
-      clientScriptPath: ['/static/dist/js/browser.js'],
-      clientStylePath: [
-        '/static/dist/css/min.css',      // UI library
-        '/static/dist/css/extra.css'     // Custom styles
-      ],
-      // ...SEO/E-E-A-T configuration
-    });
-    ```
-
     <br>
 
 - ## Lifecycle Hooks 🔄
 
-    Control your application at each phase:
-
-    ```typescript
-    createApp(config, {
-      onAwake: async (ctx) => {
-        // Databases ready, client built, plugins initialized
-        // Perfect for: seed data, cache warming
-        const db = ctx.databases.get('default');
-        await db.query('INSERT INTO ...');
-      },
-
-      onStart: async (ctx) => {
-        // Server created, routes merged, middleware ready
-        // Perfect for: logging setup, route inspection
-        console.log(`${ctx.routes.length} routes registered`);
-      },
-
-      onReady: async (ctx) => {
-        // Server listening and ready
-        // Perfect for: external service notifications
-        const url = `http://${ctx.config.server.host}:${ctx.config.server.port}`;
-        console.log(`🚀 Live at ${url}`);
-      },
-
-      onFinish: async (ctx) => {
-        // Graceful shutdown
-        // Perfect for: cleanup, connection closing
-      },
-
-      onError: async (ctx, phase, error) => {
-        // Error handling across all phases
-        console.error(`Error in ${phase}:`, error);
-      }
-    });
+    ```
+    ┌─────────────────────────────────────────────────────────┐
+    │                                                         │
+    │  createApp(config)                                      │
+    │                                                         │
+    ├─ INITIALIZE Phase                                       │
+    │  ├─ Load configuration                                  │
+    │  ├─ Initialize plugins                                  │
+    │  └─ Setup server                                        │
+    │                                                         │
+    ├─ BUILD Phase (in background)                            │
+    │  ├─ Build client bundle (Bun)                           │
+    │  ├─ Build styles (Sass)                                 │
+    │  ├─ Setup i18n system                                   │
+    │  └─ Run plugin onRegister hooks                         │
+    │                                                         │
+    ├─ AWAKE Phase                                            │
+    │  ├─ Register routes                                     │
+    │  ├─ Run plugin onAwake hooks                            │
+    │  └─ Verify configuration                                │
+    │                                                         │
+    ├─ START Phase                                            │
+    │  ├─ Start HTTP server                                   │
+    │  ├─ Run plugin onStart hooks                            │
+    │  └─ Listen on configured port                           │
+    │                                                         │
+    └─ READY Phase                                            │
+       ├─ Run plugin onReady hooks                            │
+       ├─ Server accepting requests                           │
+       └─ SPA fully operational                               │
     ```
 
     <br>
-
-- ## Plugins 🔌
-
-    Extend CruxJS with plugins. They integrate seamlessly into the lifecycle:
-
-    ```typescript
-    import type { CruxPlugin } from '@cruxjs/base';
-
-    const myPlugin: CruxPlugin = {
-      name: 'my-plugin',
-      version: '1.0.0',
-
-      // Provide routes
-      routes: [
-        {
-          method: 'GET',
-          path: '/plugin/status',
-          handler: async (ctx) => ctx.json({ status: 'ok' })
-        }
-      ],
-
-      // Define database schemas
-      schemas: [
-        {
-          name: 'my_table',
-          columns: [
-            { name: 'id', type: 'INTEGER PRIMARY KEY' },
-            { name: 'data', type: 'TEXT' }
-          ]
-        }
-      ],
-
-      // Register middleware
-      middleware: {
-        'my-middleware': async (ctx, next) => {
-          console.log('Before request');
-          const result = await next();
-          console.log('After request');
-          return result;
-        }
-      },
-
-      // Hook into lifecycle
-      hooks: {
-        onAwake: async (ctx) => console.log('Plugin awake'),
-        onStart: async (ctx) => console.log('Plugin start'),
-        onReady: async (ctx) => console.log('Plugin ready'),
-        onShutdown: async (ctx) => console.log('Plugin shutdown')
-      }
-    };
-
-    // Use in config
-    const config: AppConfig = {
-      plugins: [myPlugin]
-    };
-    ```
-
-    **Popular Plugins:**
-    - [@cruxplug/spa](https://github.com/cruxplug-org/spa) — Single Page Application with SEO/E-E-A-T
-    - More coming soon...
-
     <br>
 
-- ## Database Support 📊
+- ## API Reference 📚
 
-    Configure one or multiple databases:
+    - ### AppConfig
 
-    ```typescript
-    const config: AppConfig = {
-      database: [
-        {
-          name: 'primary',
-          connection: './data/primary.db',
-          schema: './src/schemas/primary.ts'
-        },
-        {
-          name: 'cache',
-          connection: './data/cache.db',
-          schema: './src/schemas/cache.ts'
+        ```typescript
+        interface AppConfig {
+            // Debug mode
+            debug?              : boolean;
+
+            // Server configuration (REQUIRED)
+            server: {
+                port            : number;
+                host            : string;
+                logging?: {
+                    level       : 'debug' | 'info' | 'warn' | 'error';
+                    pretty?     : boolean;
+                };
+                cors?           : CorsConfig;
+                middleware?     : Middleware[];
+            };
+
+            // Static files serving
+            static?: {
+                path            : string;       // URL path for static files
+                directory       : string;       // File system directory
+                maxAge?         : number;       // Cache duration (seconds)
+                index?          : string[];     // Index files to serve
+            };
+
+            // Client build configuration
+            client?: {
+                entry           : string;
+                output          : string;
+                minify?         : boolean;
+                sourcemap?      : boolean;
+                target?         : string;
+                external?       : string[];
+                define?         : Record<string, any>;
+            };
+
+            // i18n configuration
+            i18n?               : I18nConfig;
+
+            // Style build configuration
+            style?: {
+                entry           : string;
+                output          : string;
+                minify?         : boolean;
+                sourcemap?      : boolean;
+                includePaths?   : string[];
+            };
+
+            // Plugins
+            plugins?            : CruxPlugin[];
+
+            // UI library configuration (optional)
+            ui?: {
+                package         : string;       // e.g., '@mineui/core'
+                output          : string;       // Output directory
+            };
+
+            // Database configuration (optional)
+            db?                 : DatabaseConfig;
         }
-      ]
-    };
+        ```
 
-    // Access in lifecycle hooks or plugins
-    const app = createApp(config);
-    const primaryDb = app.getContext().databases.get('primary');
-    const cacheDb = app.getContext().databases.get('cache');
-    ```
+        <div align="center"> <img src="./assets/img/line.png" alt="line" style="display: block; margin-top:20px;margin-bottom:20px;width:500px;"/> </div>
+
+    - ### Application Instance
+
+        ```typescript
+        const app = createApp(config);
+
+        // Start the application
+        app.start();
+
+        // Get configuration
+        app.getConfig();
+
+        // Register a plugin
+        app.use(plugin);
+
+        // Get a plugin instance
+        app.getPlugin('plugin-name');
+
+        // Access logger
+        app.logger.info('Message');
+
+        // Access database (if configured)
+        app.db?.query('SELECT * FROM users');
+
+        // Access plugin registry
+        app.plugins.getAll();
+        ```
+
+    - ### Plugin Interface
+
+        ```typescript
+        interface CruxPlugin {
+            name            : string;
+            version         : string;
+            routes?         : RouteDefinition[];
+            middleware?     : AppMiddleware[];
+
+            onRegister?     : (app: AppInstance) => Promise<void>;
+            onAwake?        : (ctx: LifecycleContext) => Promise<void>;
+            onStart?        : (ctx: LifecycleContext) => Promise<void>;
+            onReady?        : (ctx: LifecycleContext) => Promise<void>;
+            onShutdown?     : (ctx: LifecycleContext) => Promise<void>;
+        }
+        ```
 
     <br>
-
-- ## Internationalization (i18n) 🌍
-
-    Built-in multi-language support:
-
-    ```typescript
-    const config: AppConfig = {
-      i18n: {
-        defaultLanguage: 'en',
-        supportedLanguages: ['en', 'ar', 'fr', 'es'],
-        basePath: './src/shared/static/i18n',
-        fileExtension: 'json'
-      }
-    };
-    ```
-
-    **Directory structure:**
-    ```
-    src/shared/static/i18n/
-    ├── en.json
-    ├── ar.json
-    ├── fr.json
-    └── es.json
-    ```
-
     <br>
 
-- ## Configuration 🔥
+- ## Best Practices ✨
 
-    ### AppConfig Interface
+    - #### Configuration Structure
 
-    ```typescript
-    interface AppConfig {
-      // Enable debug mode (affects minification, sourcemaps)
-      debug?: boolean;
-
-      // Server configuration
-      server?: {
-        port?: number;              // Default: 3000
-        host?: string;              // Default: 'localhost'
-        logging?: {
-          level?: 'debug' | 'info' | 'warn' | 'error';
-          pretty?: boolean;
+        ```typescript
+        // ✅ DO: Keep configuration centralized
+        const appConfig: AppConfig = {
+            debug       : process.env.DEBUG === 'true',
+            server      : { port: parseInt(process.env.PORT || '3000') },
+            // ... rest of config
         };
-      };
 
-      // Client build (Bun bundler)
-      client?: {
-        entry: string;              // Entry point (e.g., './src/client/browser.tsx')
-        output: string;             // Output directory
-        target?: 'browser' | 'bun';
-        minify?: boolean;           // Default: !debug
-        sourcemap?: boolean;        // Default: debug
-        external?: string[];        // Don't bundle these
-      };
+        // ❌ DON'T: Scatter configuration
+        const app = createApp({});
+        app.config.server.port = 3000;
+        app.config.client.entry = './src/app/client.ts';
+        ```
 
-      // UI Library (npm package)
-      ui?: {
-        package: string;            // Package name (e.g., '@mineui/core')
-        output: string;             // CSS output directory
-      };
+    - #### Plugin Usage
 
-      // Custom styles (SCSS/CSS)
-      style?: {
-        entry: string;              // Entry SCSS/CSS file
-        output: string;             // CSS output file (e.g., 'extra.css')
-        minify?: boolean;           // Default: !debug
-        sourcemap?: boolean;        // Default: debug
-      };
+        ```typescript
+        // ✅ DO: Define plugins before creating app
+        const plugins = [
+            spaPlugin,
+            authPlugin,
+            analyticsPlugin
+        ];
 
-      // Static files
-      static?: {
-        path: string;               // Web path (e.g., '/static')
-        directory: string;          // Disk directory
-        maxAge?: number;            // Cache duration in seconds
-        index?: string[];           // Default files
-      };
+        const app = createApp({
+            plugins,
+            // ... rest of config
+        });
 
-      // Database configuration
-      database?: DatabaseConfig | DatabaseConfig[];
+        // ❌ DON'T: Add plugins after app creation
+        app.use(plugin);
+        ```
 
-      // Internationalization
-      i18n?: {
-        defaultLanguage: string;
-        supportedLanguages: string[];
-        basePath?: string;
-        fileExtension?: string;     // Default: 'json'
-      };
+    - #### Static Files
 
-      // Inline routes
-      routes?: RouteDefinition[];
+        ```typescript
+        // ✅ DO: Use static configuration
+        static: {
+            path        : '/static',
+            directory   : './src/shared/static',
+            maxAge      : 3600
+        }
 
-      // Plugins
-      plugins?: CruxPlugin[];
+        // ❌ DON'T: Manual middleware setup
+        app.use(express.static('./src/shared/static'));
+        ```
 
-      // Custom middleware
-      middlewares?: Record<string, AppMiddleware>;
-    }
-    ```
+    - #### Build Configuration
+
+        ```typescript
+        // ✅ DO: Configure builds in appConfig
+        client: {
+            entry       : './src/app/client.ts',
+            output      : './dist/js',
+            minify      : !config.debug
+        }
+
+        // ❌ DON'T: Rely on external build tools
+        // Use webpack/vite separately
+        ```
+
+    - #### Error Handling
+
+        ```typescript
+        // ✅ DO: Define error pages via SPA plugin
+        const spaPlugin = serverSPA({
+            errorPages: [
+                {
+                    statusCode  : 404,
+                    title       : 'Not Found',
+                    path        : '/*'
+                }
+            ]
+        });
+
+        // ❌ DON'T: Manual error handlers
+        app.get('*', (req, res) => {
+            res.status(404).send('Not found');
+        });
+        ```
 
     <br>
-
     <br>
 
-- ## API Reference 🔥
+- ## Integration with Other CruxJS Libraries 🔗
 
-    ### Core Function
+    > @cruxjs/app integrates seamlessly with:
 
-    ```typescript
-    import { createApp, type AppConfig } from '@cruxjs/app';
+    - **[@cruxjs/spa](https://github.com/cruxjs-org/spa)**
+        > SPA plugin for server-side rendering and routing
 
-    const app = createApp(config, {
-      onAwake: async (ctx) => { /* ... */ },
-      onStart: async (ctx) => { /* ... */ },
-      onReady: async (ctx) => { /* ... */ },
-      onFinish: async (ctx) => { /* ... */ },
-      onError: async (ctx, phase, error) => { /* ... */ }
-    });
+    - **[@cruxjs/client](https://github.com/cruxjs-org/client)**
+        > Client-side application manager with routing and lifecycle
 
-    await app.start();
-    ```
+    - **[@cruxjs/base](https://github.com/cruxjs-org/base)**
+        > Base types and plugin system
 
-    ### AppInstance Methods
+    - **[@minejs/i18n](https://github.com/minejs-org/i18n)**
+        > i18n system (automatic setup)
 
-    - `app.start()` — Start through all lifecycle phases
-    - `app.stop()` — Stop server and cleanup
-    - `app.restart()` — Restart the application
-    - `app.getContext()` — Get current lifecycle context
+    - **[@minejs/server](https://github.com/minejs-org/server)**
+        > HTTP server (automatic setup)
+
+    - **[@minejs/browser](https://github.com/minejs-org/browser)**
+        > Browser utilities
+
+    - **Bun**
+        > Client bundler (automatic client builds)
+
+    - **Sass**
+      >Style preprocessing (automatic style builds)
 
 <!-- ╚═════════════════════════════════════════════════════════════════╝ -->
 
@@ -625,6 +660,7 @@
 
 <!-- ╔══════════════════════════════ END ══════════════════════════════╗ -->
 
+<br>
 <br>
 
 ---
