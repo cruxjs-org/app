@@ -10,7 +10,7 @@
     import { AppConfig, LifecycleContext, LifecycleHooks, AppInstance, RouteDefinition, AppMiddleware, Logger, PluginRegistry, ResourceMerger } from '@cruxjs/base';
     import { server as createServer } from '@minejs/server';
     import { DB } from '@minejs/db';
-    import { setupI18n as _setupI18n } from '@minejs/i18n';
+    // import { setupI18n as _setupI18n } from '@minejs/i18n';
     import type { TableSchema } from '@minejs/db';
     import * as sass from 'sass';
 
@@ -290,25 +290,25 @@
      *   }
      * }, logger);
      */
-    async function setupI18n(config: AppConfig, logger: Logger) {
-        if (!config.i18n) return;
+    // async function setupI18n(config: AppConfig, logger: Logger) {
+    //     if (!config.i18n) return;
 
-        logger.info('Setting up i18n...');
+    //     logger.info('Setting up i18n...');
 
-        try {
-            await _setupI18n({
-                defaultLanguage: config.i18n.defaultLanguage,
-                supportedLanguages: config.i18n.supportedLanguages,
-                basePath: config.i18n.basePath,
-                fileExtension: config.i18n.fileExtension || 'json'
-            });
+    //     try {
+    //         await _setupI18n({
+    //             defaultLanguage: config.i18n.defaultLanguage,
+    //             supportedLanguages: config.i18n.supportedLanguages,
+    //             basePath: config.i18n.basePath,
+    //             fileExtension: config.i18n.fileExtension || 'json'
+    //         });
 
-            logger.success(`i18n ready → ${config.i18n.supportedLanguages.join(', ')}`);
-        } catch (err) {
-            logger.error('Failed to setup i18n', err as Error);
-            throw err;
-        }
-    }
+    //         logger.success(`i18n ready → ${config.i18n.supportedLanguages.join(', ')}`);
+    //     } catch (err) {
+    //         logger.error('Failed to setup i18n', err as Error);
+    //         throw err;
+    //     }
+    // }
 
     /**
      * Dynamically loads route definitions from API directory
@@ -507,6 +507,9 @@
             logger.phase('AWAKE');
 
             try {
+                // // Setup i18n
+                // await setupI18n(config, logger);
+
                 // Build client
                 clientBuild = await buildClient(config, logger);
                 ctx.clientBuild = clientBuild;
@@ -526,9 +529,6 @@
                 const dbs = await setupDatabases(config, pluginSchemas, logger);
                 databases.clear();
                 dbs.forEach((db, name) => databases.set(name, db));
-
-                // Setup i18n
-                await setupI18n(config, logger);
 
                 // Call plugin hooks
                 await pluginRegistry.callHook('onAwake', ctx);
@@ -583,7 +583,7 @@
                 }
 
                 // Create server
-                serverInstance = createServer({
+                serverInstance = await createServer({
                     port: config.server?.port || 3000,
                     hostname: config.server?.host || 'localhost',
                     logging: config.server?.logging,
