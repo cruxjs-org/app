@@ -10,7 +10,6 @@
     import { AppConfig, LifecycleContext, LifecycleHooks, AppInstance, RouteDefinition, AppMiddleware, Logger, PluginRegistry, ResourceMerger } from '@cruxjs/base';
     import { server as createServer } from '@minejs/server';
     import { DB } from '@minejs/db';
-    // import { setupI18n as _setupI18n } from '@minejs/i18n';
     import type { TableSchema } from '@minejs/db';
     import * as sass from 'sass';
 
@@ -594,7 +593,9 @@
                     i18n: config.i18n
                         ? {
                             defaultLanguage: config.i18n.defaultLanguage,
-                            supportedLanguages: config.i18n.supportedLanguages
+                            supportedLanguages: config.i18n.supportedLanguages,
+                            basePath: config.i18n.basePath,
+                            fileExtension: config.i18n.fileExtension || 'json'
                         }
                         : undefined,
                     onError: errorHandler
