@@ -8,7 +8,7 @@
 </div>
 
 <div align="center">
-    <img src="https://img.shields.io/badge/v-0.0.9-black"/>
+    <img src="https://img.shields.io/badge/v-0.1.0-black"/>
     <a href="https://github.com/cruxjs-org"><img src="https://img.shields.io/badge/🔥-@cruxjs-black"/></a>
     <br>
     <img src="https://img.shields.io/badge/coverage-~%25-brightgreen" alt="Test Coverage" />
@@ -478,12 +478,6 @@
             // Plugins
             plugins?            : CruxPlugin[];
 
-            // UI library configuration (optional)
-            ui?: {
-                package         : string;       // e.g., '@mineui/core'
-                output          : string;       // Output directory
-            };
-
             // Database configuration (optional)
             db?                 : DatabaseConfig;
         }
@@ -603,6 +597,35 @@
         // Use webpack/vite separately
         ```
 
+    - #### Importing UI Libraries in SCSS
+
+        ```scss
+        // app.scss - Main Application Styles
+        //
+        // Made with ❤️ by Maysara.
+
+
+        // ╔═══════════════════════════════════════ PACK ═════════════════════════════════════════╗
+
+            // 1. Variables (customize your theme here)
+            @use 'variables' as *;
+
+            // 2. Utility Library (MineUI utilities via SCSS)
+            @use '../../../../node_modules/@mineui/utils/dist/index.scss' as *;
+
+            // 3. Additional UI libraries (optional)
+            // @use '../../../../node_modules/@mineui/components/dist/components.scss' as *;
+
+        // ╚══════════════════════════════════════════════════════════════════════════════════════╝
+
+
+        // ╔═══════════════════════════════════════ CORE ═════════════════════════════════════════╗
+
+            // Your custom base styles here
+
+        // ╚══════════════════════════════════════════════════════════════════════════════════════╝
+        ```
+
     - #### Error Handling
 
         ```typescript
@@ -647,6 +670,9 @@
 
     - **[@minejs/browser](https://github.com/minejs-org/browser)**
         > Browser utilities
+
+    - **[@mineui/utils](https://github.com/minejs-org/mineui)**
+        > UI utilities (import via SCSS in your stylesheet)
 
     - **Bun**
         > Client bundler (automatic client builds)

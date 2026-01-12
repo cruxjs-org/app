@@ -7,7 +7,8 @@
 
 // ╔════════════════════════════════════════ PACK ════════════════════════════════════════╗
 
-    import { AppConfig, LifecycleContext, LifecycleHooks, AppInstance, RouteDefinition, AppMiddleware, Logger, PluginRegistry, ResourceMerger } from '@cruxjs/base';
+    import { AppConfig, LifecycleContext, LifecycleHooks, AppInstance, RouteDefinition, AppMiddleware, PluginRegistry, ResourceMerger } from '@cruxjs/base';
+    import { Logger } from '@minejs/logger';
     import { server as createServer } from '@minejs/server';
     import { DB } from '@minejs/db';
     import type { TableSchema } from '@minejs/db';
@@ -56,69 +57,11 @@
             if (!result.success) throw new Error('Build failed');
 
             const outputs = result.outputs.map(o => o.path);
-            logger.success(`Client built → ${outputs.join(', ')}`);
+            logger.debug(`Client built → ${outputs.join(', ')}`);
 
             return { success: true, outputs };
         } catch (err) {
-            logger.error('Failed to build client', err as Error);
-            throw err;
-        }
-    }
-
-    /**
-     * Builds and installs UI library if specified in config
-     *
-     * Handles:
-     * - Installing the specified UI package from npm
-     * - Copying minified UI assets to the configured output path
-     * - Supports packages like @mineui/core
-     *
-     * @param {AppConfig} config - The application configuration containing ui settings
-     * @param {Logger} logger - Logger instance for logging build progress and errors
-     * @returns {Promise<{success: boolean, output: string} | null>} Build result with output path, or null if no ui config
-     * @throws {Error} If the build process fails
-     *
-     * @example
-     * const result = await buildUI(config, logger);
-     * if (result?.success) {
-     *   console.log('UI built to:', result.output);
-     * }
-     */
-    async function buildUI(config: AppConfig, logger: Logger) {
-        if (!config.ui) {
-            logger.info('No UI config provided, skipping UI build');
-            return null;
-        }
-
-        logger.info(`Building UI from package: ${config.ui.package}...`);
-
-        try {
-            // Copy minified CSS from node_modules to output directory as min.css
-            // @mineui/core exports mineui.css, we copy it as min.css
-            const uiSourcePath = `./node_modules/${config.ui.package}/dist/mineui.css`;
-            const uiOutputPath = `${config.ui.output}/min.css`;
-
-            // Ensure output directory exists and copy file
-            try {
-                const { mkdir } = await import('fs/promises');
-                await mkdir(config.ui.output, { recursive: true });
-                const sourceFile = Bun.file(uiSourcePath);
-                const exists = await sourceFile.exists();
-                if (!exists) {
-                    logger.info(`UI source file not found: ${uiSourcePath}`);
-                } else {
-                    await Bun.write(uiOutputPath, sourceFile);
-                    logger.info(`Copied UI CSS → ${uiOutputPath}`);
-                }
-            } catch (copyErr) {
-                logger.error(`Failed to copy UI CSS: ${copyErr}`);
-            }
-
-            logger.success(`UI built → ${config.ui.output}`);
-
-            return { success: true, output: config.ui.output };
-        } catch (err) {
-            logger.error('Failed to build UI', err as Error);
+            logger.error('Failed to build client', (err as Error).message);
             throw err;
         }
     }
@@ -172,11 +115,11 @@
             await Bun.write(outputPath, compileResult.css);
 
             logger.info(`Compiled SCSS to CSS → ${outputFilename}`);
-            logger.success(`Styles built → ${outputPath}`);
+            logger.debug(`Styles built → ${outputPath}`);
 
             return { success: true, output: outputPath };
         } catch (err) {
-            logger.error('Failed to build styles', err as Error);
+            logger.error('Failed to build styles', (err as Error).message);
             return { success: false, output: config.style?.output || 'unknown' };
         }
     }
@@ -237,7 +180,7 @@
                         }
                     }
                 } catch (err) {
-                    logger.error(`Failed to load schema: ${dbConfig.schema}`, err as Error);
+                    logger.error(`Failed to load schema: ${dbConfig.schema}`, (err as Error).message);
                     throw err;
                 }
             }
@@ -248,7 +191,7 @@
             }
 
             databases.set(name, db);
-            logger.success(`Database '${name}' ready`);
+            logger.debug(`Database '${name}' ready`);
         }
 
         // If no user database but plugins need one, create default
@@ -260,7 +203,7 @@
             }
 
             databases.set('default', db);
-            logger.success(`Database 'default' ready (in-memory for plugins)`);
+            logger.debug(`Database 'default' ready (in-memory for plugins)`);
         }
 
         return databases;
@@ -302,9 +245,9 @@
     //             fileExtension: config.i18n.fileExtension || 'json'
     //         });
 
-    //         logger.success(`i18n ready → ${config.i18n.supportedLanguages.join(', ')}`);
+    //         logger.debug(`i18n ready → ${config.i18n.supportedLanguages.join(', ')}`);
     //     } catch (err) {
-    //         logger.error('Failed to setup i18n', err as Error);
+    //         logger.error('Failed to setup i18n', (err as Error).message);
     //         throw err;
     //     }
     // }
@@ -346,14 +289,14 @@
                         routes.push(...exported);
                     }
                 } catch (err) {
-                    logger.error(`Failed to load routes from ${file}`, err as Error);
+                    logger.error(`Failed to load routes from ${file}`, (err as Error).message);
                 }
             }
 
-            logger.success(`Routes loaded → ${routes.length} routes`);
+            logger.debug(`Routes loaded → ${routes.length} routes`);
             return routes;
         } catch (err) {
-            logger.error('Failed to scan route directory', err as Error);
+            logger.error('Failed to scan route directory', (err as Error).message);
             return [];
         }
     }
@@ -446,7 +389,7 @@
             ? hooks.onConfig(userConfig) as AppConfig
             : userConfig;
 
-        const logger = new Logger(config.debug);
+        const logger = new Logger(config.debug ? 'debug' : 'info', true, 'CruxJS');
         const pluginRegistry = new PluginRegistry(logger);
         const resourceMerger = new ResourceMerger(logger);
 
@@ -485,7 +428,7 @@
                 return;
             }
 
-            logger.phase('REGISTER');
+            logger.debug('REGISTER');
 
             for (const plugin of config.plugins) {
                 await pluginRegistry.register(plugin, partialApp);
@@ -503,7 +446,7 @@
         // ─────────────────────────────────────────────────────────
 
         async function phaseAwake() {
-            logger.phase('AWAKE');
+            logger.debug('AWAKE');
 
             try {
                 // // Setup i18n
@@ -512,10 +455,6 @@
                 // Build client
                 clientBuild = await buildClient(config, logger);
                 ctx.clientBuild = clientBuild;
-
-                // Build UI library if configured
-                const uiBuild = await buildUI(config, logger);
-                ctx.uiBuild = uiBuild;
 
                 // Build styles if configured
                 const styleBuild = await buildStyles(config, logger);
@@ -545,7 +484,7 @@
         // ─────────────────────────────────────────────────────────
 
         async function phaseStart() {
-            logger.phase('START');
+            logger.debug('START');
 
             try {
                 // Load user routes
@@ -609,7 +548,7 @@
                 ctx.server = serverInstance;
                 partialApp.server = serverInstance;
 
-                logger.success(
+                logger.debug(
                     `Server created → ${config.server?.host || 'localhost'}:${config.server?.port || 3000}`
                 );
 
@@ -629,12 +568,12 @@
         // ─────────────────────────────────────────────────────────
 
         async function phaseReady() {
-            logger.phase('READY');
+            logger.debug('READY');
 
             try {
                 await serverInstance.start();
 
-                logger.success(
+                logger.debug(
                     `Server running on http://${config.server?.host || 'localhost'}:${config.server?.port || 3000}`
                 );
 
@@ -685,9 +624,9 @@
 
                     await hooks?.onFinish?.(ctx);
 
-                    logger.success('Server stopped');
+                    logger.debug('Server stopped');
                 } catch (err) {
-                    logger.error('Failed to stop server', err as Error);
+                    logger.error('Failed to stop server', (err as Error).message);
                     throw err;
                 }
             },
