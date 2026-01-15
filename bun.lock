@@ -4,11 +4,11 @@
     "": {
       "name": "@cruxjs/app",
       "dependencies": {
-        "@cruxjs/base": "^0.1.1",
+        "@cruxjs/base": "^0.1.2",
         "@minejs/db": "^0.0.3",
         "@minejs/i18n": "^0.1.2",
         "@minejs/logger": "^0.0.2",
-        "@minejs/server": "^0.1.1",
+        "@minejs/server": "^0.1.2",
         "sass": "^1.97.2",
       },
       "devDependencies": {
@@ -30,7 +30,7 @@
     },
   },
   "packages": {
-    "@cruxjs/base": ["@cruxjs/base@0.1.1", "", { "dependencies": { "@minejs/db": "^0.0.3", "@minejs/logger": "^0.0.2", "@minejs/server": "^0.1.1" }, "peerDependencies": { "bun": "^1.3.3" } }, "sha512-gf//34Ok1davikyD8Khb7cLEY8Qlz5wkZ3l9akTNp3XN1yXEOQDtN6hIQ8N4YqM6IxE8NpUDJFGDIlI0TUzmag=="],
+    "@cruxjs/base": ["@cruxjs/base@0.1.2", "", { "dependencies": { "@minejs/db": "^0.0.3", "@minejs/logger": "^0.0.2", "@minejs/server": "^0.1.2" }, "peerDependencies": { "bun": "^1.3.3" } }, "sha512-kNYPqOkoITIsOyde+TW/9oTY9qPXa48ql4IbRQlZUjtSGKuHQ+z3lDslD4rNcoZz8C+k31yaANFQbEm2HsmSKQ=="],
 
     "@cspotcode/source-map-support": ["@cspotcode/source-map-support@0.8.1", "", { "dependencies": { "@jridgewell/trace-mapping": "0.3.9" } }, "sha512-IchNf6dN4tHoMFIn/7OE8LWZ19Y6q/67Bmf6vnGREv8RSbBVb9LPJxEcnwrcwX6ixSvaiGoomAUvu4YSxXrVgw=="],
 
@@ -128,7 +128,7 @@
 
     "@minejs/logger": ["@minejs/logger@0.0.2", "", { "peerDependencies": { "bun": "^1.3.3" } }, "sha512-fEvGAZOqwhJ+974A5+z1S1mczx/xasIczCIEnnnIYc7FdWZYsh/uGWa28hFmXjpr0RoQB3W89fEWCPfvU3F9hA=="],
 
-    "@minejs/server": ["@minejs/server@0.1.1", "", { "dependencies": { "@minejs/db": "^0.0.3", "@minejs/i18n": "^0.1.2", "@minejs/logger": "^0.0.2" }, "peerDependencies": { "bun": "^1.3.3" } }, "sha512-T9Nl5MoO/9mgSJkLvUUwFjoiLamBWN4MXHc0UVhaRgOs1AiDmY5CU+Yn3tOiVSlnPs8XqS699OORQmOPk0PqXg=="],
+    "@minejs/server": ["@minejs/server@0.1.2", "", { "dependencies": { "@minejs/db": "^0.0.3", "@minejs/i18n": "^0.1.2", "@minejs/logger": "^0.0.2" }, "peerDependencies": { "bun": "^1.3.3" } }, "sha512-pXBr6n7gwKeHnTB05PVXoFdaV4R3b362vsbRbeNLtsoDHAn5EJPzCjsC3kHbmR8Kx9aM9e6wGoQR4JCySC1huw=="],
 
     "@minejs/signals": ["@minejs/signals@0.0.6", "", { "peerDependencies": { "bun": ">=1.3.3" } }, "sha512-Dc8aOxn6l5VocDFfpqRtda55rExtl8JKRMD/jlQweJLrK2jBcf5Kf3y+OaV18QAYA9ngnM03aFNgm1xfeqfeAg=="],
 
