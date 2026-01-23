@@ -1,6 +1,6 @@
 {
 	"name"                             : "@cruxjs/app",
-	"version"                          : "0.1.9",
+	"version"                          : "0.2.0",
 	"description"                      : "Full-stack framework orchestrator for building modern web applications. Zero configuration. Plugin-based architecture.",
 	"keywords"                         : ["cruxjs", "app"],
 	"license"                          : "MIT",

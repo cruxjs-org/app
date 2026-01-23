@@ -158,6 +158,9 @@
             const sourceDir = path.dirname(config.client.entry);
             const glob = new Bun.Glob('**/*.{ts,tsx,js,jsx}');
             const usedIcons = new Set<string>();
+
+            // Always include these icons
+            usedIcons.add('angle-down');
             
             for await (const file of glob.scan({ cwd: sourceDir })) {
                 const filePath = path.join(sourceDir, file);
