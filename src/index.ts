@@ -13,6 +13,7 @@
     import { DB } from '@minejs/db';
     import type { TableSchema } from '@minejs/db';
     import * as sass from 'sass';
+    import * as path from 'path';
 
 // ╚══════════════════════════════════════════════════════════════════════════════════════╝
 
@@ -57,12 +58,173 @@
             if (!result.success) throw new Error('Build failed');
 
             const outputs = result.outputs.map(o => o.path);
+            
+            await optimizeBundle(outputs, config, logger);
+
             logger.debug(`Client built → ${outputs.join(', ')}`);
 
             return { success: true, outputs };
         } catch (err) {
             logger.error('Failed to build client', (err as Error).message);
             throw err;
+        }
+    }
+
+    export async function optimizeBundle(outputs: string[], config: AppConfig, logger: Logger) {
+        if (!config.client?.entry) return;
+        
+        const bundlePath = outputs.find(p => p.endsWith('.js'));
+        if (!bundlePath) return;
+
+        logger.info('Optimizing bundle (removing unused icons)...');
+        
+        try {
+            const file = Bun.file(bundlePath);
+            const content = await file.text();
+            
+            // Step 1: Find all maps and keys
+            const maps: {start: number, end: number, keys: string[]}[] = [];
+            const allKeys = new Set<string>();
+            
+            let i = 0;
+            while (i < content.length) {
+                const char = content[i];
+                // Skip strings
+                if (char === '"' || char === "'") {
+                    const quote = char;
+                    i++;
+                    while (i < content.length) {
+                        if (content[i] === quote && content[i-1] !== '\\') break;
+                        i++;
+                    }
+                } else if (char === '{') {
+                    // Check if this is an icon map start
+                    // Look ahead for key:{category: or key:{viewBox: or key:{svg:
+                    // We check content AFTER the opening brace
+                    const chunk = content.substring(i + 1, i + 100);
+                    if (/^\s*(?:["'][\w-]+["']|\w+)\s*:\s*\{\s*(?:category|viewBox|svg)\b/.test(chunk)) {
+                        // Found a map!
+                        const start = i;
+                        let braceCount = 1;
+                        let j = i + 1;
+                        let inStr = false;
+                        let strChar = '';
+                        
+                        while (j < content.length) {
+                            const c = content[j];
+                            if (inStr) {
+                                if (c === strChar && content[j-1] !== '\\') inStr = false;
+                            } else {
+                                if (c === '"' || c === "'") {
+                                    inStr = true;
+                                    strChar = c;
+                                } else if (c === '{') {
+                                    braceCount++;
+                                } else if (c === '}') {
+                                    braceCount--;
+                                    if (braceCount === 0) break;
+                                }
+                            }
+                            j++;
+                        }
+                        
+                        const end = j + 1;
+                        const mapContent = content.substring(start, end);
+                        
+                        // Extract keys
+                        const keys: string[] = [];
+                        const keyRegex = /(?:["']([\w-]+)["']|(\w+))\s*:\s*\{/g;
+                        let match;
+                        while ((match = keyRegex.exec(mapContent)) !== null) {
+                            const key = match[1] || match[2];
+                            keys.push(key);
+                            allKeys.add(key);
+                        }
+                        
+                        maps.push({start, end, keys});
+                        
+                        // Advance i to end
+                        i = end - 1; 
+                    }
+                }
+                i++;
+            }
+            
+            logger.debug(`Found ${maps.length} icon maps with ${allKeys.size} total icons.`);
+            
+            if (allKeys.size === 0) return;
+
+            // Step 2: Scan usage
+            const sourceDir = path.dirname(config.client.entry);
+            const glob = new Bun.Glob('**/*.{ts,tsx,js,jsx}');
+            const usedIcons = new Set<string>();
+            
+            for await (const file of glob.scan({ cwd: sourceDir })) {
+                const filePath = path.join(sourceDir, file);
+                const fileContent = await Bun.file(filePath).text();
+                
+                for (const icon of allKeys) {
+                    if (!usedIcons.has(icon)) {
+                        // Use word boundary to avoid partial matches (e.g. "x" in "box")
+                        // Escape special regex characters in icon name
+                        const escapedIcon = icon.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                        const regex = new RegExp(`\\b${escapedIcon}\\b`);
+                        
+                        if (regex.test(fileContent)) {
+                            usedIcons.add(icon);
+                        }
+                    }
+                }
+            }
+            
+            logger.debug(`Used icons: ${usedIcons.size}`);
+            
+            // Step 3: Rewrite
+            let newContent = '';
+            let lastIndex = 0;
+            
+            for (const map of maps) {
+                // Append content before map
+                newContent += content.substring(lastIndex, map.start);
+                
+                // Optimize map
+                const mapContent = content.substring(map.start, map.end);
+                
+                let obj;
+                try {
+                     const parseFn = new Function('return ' + mapContent);
+                     obj = parseFn();
+                } catch (e) {
+                    logger.warn('Failed to parse map, keeping as is');
+                    newContent += mapContent;
+                    lastIndex = map.end;
+                    continue;
+                }
+                
+                let removed = 0;
+                for (const key of map.keys) {
+                    if (!usedIcons.has(key)) {
+                        delete obj[key];
+                        removed++;
+                    }
+                }
+                
+                if (removed > 0) {
+                    newContent += JSON.stringify(obj);
+                } else {
+                    newContent += mapContent;
+                }
+                
+                lastIndex = map.end;
+            }
+            
+            newContent += content.substring(lastIndex);
+            
+            await Bun.write(bundlePath, newContent);
+             logger.info('Bundle optimized');
+            
+        } catch (err) {
+             logger.warn('Failed to optimize bundle', (err as Error).message);
         }
     }
 

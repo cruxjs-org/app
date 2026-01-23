@@ -1,6 +1,8 @@
 import { AppConfig, LifecycleHooks, AppInstance } from '@cruxjs/base';
 export * from '@cruxjs/base';
+import { Logger } from '@minejs/logger';
 
+declare function optimizeBundle(outputs: string[], config: AppConfig, logger: Logger): Promise<void>;
 /**
  * Creates a CruxJS application instance with full lifecycle management
  *
@@ -51,4 +53,4 @@ export * from '@cruxjs/base';
  */
 declare function createApp(userConfig: AppConfig, hooks?: LifecycleHooks): AppInstance;
 
-export { createApp };
+export { createApp, optimizeBundle };
