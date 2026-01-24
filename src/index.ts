@@ -58,7 +58,7 @@
             if (!result.success) throw new Error('Build failed');
 
             const outputs = result.outputs.map(o => o.path);
-            
+
             await optimizeBundle(outputs, config, logger);
 
             logger.debug(`Client built → ${outputs.join(', ')}`);
@@ -72,20 +72,20 @@
 
     export async function optimizeBundle(outputs: string[], config: AppConfig, logger: Logger) {
         if (!config.client?.entry) return;
-        
+
         const bundlePath = outputs.find(p => p.endsWith('.js'));
         if (!bundlePath) return;
 
         logger.info('Optimizing bundle (removing unused icons)...');
-        
+
         try {
             const file = Bun.file(bundlePath);
             const content = await file.text();
-            
+
             // Step 1: Find all maps and keys
             const maps: {start: number, end: number, keys: string[]}[] = [];
             const allKeys = new Set<string>();
-            
+
             let i = 0;
             while (i < content.length) {
                 const char = content[i];
@@ -109,7 +109,7 @@
                         let j = i + 1;
                         let inStr = false;
                         let strChar = '';
-                        
+
                         while (j < content.length) {
                             const c = content[j];
                             if (inStr) {
@@ -127,10 +127,10 @@
                             }
                             j++;
                         }
-                        
+
                         const end = j + 1;
                         const mapContent = content.substring(start, end);
-                        
+
                         // Extract keys
                         const keys: string[] = [];
                         const keyRegex = /(?:["']([\w-]+)["']|(\w+))\s*:\s*\{/g;
@@ -140,18 +140,18 @@
                             keys.push(key);
                             allKeys.add(key);
                         }
-                        
+
                         maps.push({start, end, keys});
-                        
+
                         // Advance i to end
-                        i = end - 1; 
+                        i = end - 1;
                     }
                 }
                 i++;
             }
-            
+
             logger.debug(`Found ${maps.length} icon maps with ${allKeys.size} total icons.`);
-            
+
             if (allKeys.size === 0) return;
 
             // Step 2: Scan usage
@@ -161,38 +161,43 @@
 
             // Always include these icons
             usedIcons.add('angle-down');
-            
+            usedIcons.add('info');
+            usedIcons.add('circle-info');
+            usedIcons.add('circle-check');
+            usedIcons.add('circle-xmark');
+            usedIcons.add('triangle-exclamation');
+
             for await (const file of glob.scan({ cwd: sourceDir })) {
                 const filePath = path.join(sourceDir, file);
                 const fileContent = await Bun.file(filePath).text();
-                
+
                 for (const icon of allKeys) {
                     if (!usedIcons.has(icon)) {
                         // Use word boundary to avoid partial matches (e.g. "x" in "box")
                         // Escape special regex characters in icon name
                         const escapedIcon = icon.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
                         const regex = new RegExp(`\\b${escapedIcon}\\b`);
-                        
+
                         if (regex.test(fileContent)) {
                             usedIcons.add(icon);
                         }
                     }
                 }
             }
-            
+
             logger.debug(`Used icons: ${usedIcons.size}`);
-            
+
             // Step 3: Rewrite
             let newContent = '';
             let lastIndex = 0;
-            
+
             for (const map of maps) {
                 // Append content before map
                 newContent += content.substring(lastIndex, map.start);
-                
+
                 // Optimize map
                 const mapContent = content.substring(map.start, map.end);
-                
+
                 let obj;
                 try {
                      const parseFn = new Function('return ' + mapContent);
@@ -203,7 +208,7 @@
                     lastIndex = map.end;
                     continue;
                 }
-                
+
                 let removed = 0;
                 for (const key of map.keys) {
                     if (!usedIcons.has(key)) {
@@ -211,21 +216,21 @@
                         removed++;
                     }
                 }
-                
+
                 if (removed > 0) {
                     newContent += JSON.stringify(obj);
                 } else {
                     newContent += mapContent;
                 }
-                
+
                 lastIndex = map.end;
             }
-            
+
             newContent += content.substring(lastIndex);
-            
+
             await Bun.write(bundlePath, newContent);
              logger.info('Bundle optimized');
-            
+
         } catch (err) {
              logger.warn('Failed to optimize bundle', (err as Error).message);
         }
